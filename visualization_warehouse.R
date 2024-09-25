@@ -7,7 +7,6 @@ packages <- c("haven", "ggplot2", "gapminder", "tidyverse", "dplyr", "stringr", 
 # invisible(lapply(packages, install.packages, character.only = TRUE))
 invisible(lapply(packages, library, character.only = TRUE))
 
-
 #Reggie's Visualization Warehouse 
 #references: FLowingdata, Data Science with R, 50 visaulizations in R
 
@@ -28,13 +27,8 @@ kaggle_climate <- read.csv("C:/Users/rferrell/visuals_repo/climate_change_impact
                               extreme_weather_events = mean(extreme_weather_events),
                               economic_impact_million_usd = mean(economic_impact_million_usd)) %>%
   melt(id=c("year","region"))
+kaggle_familyheight <- read.csv("C:/Users/rferrell/visuals_repo/GaltonFamilies.csv")%>% clean_names()
 
-
-#Quick plots 
-barplot(cars$dist)
-boxplot(cars$dist)
-hist(cars$dist,
-     main = "Cars Data")
 
 #Bar Charts
 kaggle_billionaires %>% filter(country=="USA") %>% 
@@ -64,23 +58,40 @@ kaggle_climate %>%
   theme_minimal()
 
 #Scatter Plot
-ggplot(iris, aes(x=Sepal.Length, y=Sepal.Width,color=Species)) + 
-  geom_point(size=5) +
-  theme_minimal()
+kaggle_familyheight %>% 
+ggplot(aes(x=child_height, y=father)) + 
+  geom_point(size=2) +
+  theme_minimal()+
+  geom_smooth(method=lm) +
+facet_wrap(~gender)
 
-#Area Chart
+#Stacked Area Chart
 kaggle_climate %>% 
   filter(variable=="extreme_weather_events") %>%
   ggplot(aes(x=year, y=value, fill=region)) + 
   geom_area()+
 theme_minimal()
 
-#Stacked Area Chart
 #Box Plot 
+kaggle_familyheight %>% 
+ggplot(aes(x=gender, y=child_height, fill=gender)) + 
+  geom_boxplot() +
+  theme_minimal()
+
 # Density Charts
+kaggle_laptops %>% 
+  ggplot(aes(x=avg_price, color=type_name, fill=type_name)) +
+  geom_density(alpha=0.6) +
+  theme_minimal()
+
+
 # Bubble CHart
-#Donut Chart
-#Pie Chart
+kaggle_familyheight %>% 
+  ggplot(aes(x=father, y=mother, size = child_height)) +
+  geom_point(alpha=0.5) +
+  theme_minimal()
+
+
 #Pyramid Charts
 #Timeline
 #Treemap
@@ -95,36 +106,10 @@ theme_minimal()
 #Beeswarm
 
 #### Maps 
-kaggle_cities
 
 #Map
-world <- ne_countries(returnclass = "sf") #Need to keep object as sf 
-plot(select(world, admin))
-map <- ggplot(data = world) +
-  geom_sf() +
-  theme_minimal()
-map
-
-world.admin1 <- ne_download(scale = 10, type = "states",
-                            category = "cultural", returnclass = "sf")
-united.states <- filter(world.admin1, admin == "United States of America")
-map %+% united.states
-
-map %+% filter(united.states, name != "Alaska", name != "Hawaii") +
-  coord_sf(crs = "ESRI:102003")
-
-map %+% filter(world, admin == "United States of America") 
-
-
-#Dot Mapggplot(data = usa.conterm) +
-
-
 #Dot Density Map
-
-
 #Choropleth Map
-
-
 #R Shiny Map
 leaflet() %>%
   addPolygons(
