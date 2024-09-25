@@ -1,0 +1,442 @@
+---
+title: "Data Visualization Master list"
+author: "Reggie Ferrell"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+```{r loading_packages, include=FALSE}
+library(haven)
+library(ggplot2)
+library(gapminder)
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(tidyr)
+library(Cairo)
+library(devtools)
+library(RODBC)
+library(RColorBrewer)
+library(foreign)
+library(xtable)
+library(stargazer)
+library(kableExtra)
+library(knitr)
+library(flextable)
+library(cowplot)
+library(officer)
+library(RColorBrewer)
+library(reshape2)
+library(ggrepel)
+library(stringr)
+library(extrafont)
+library('ggfittext')
+library(forcats)
+library(rgdal)
+library(gtools)
+library(ggalt)
+library(stringr)
+library(plotrix)
+library(janitor)
+library(tmap)
+library(rgdal)#Reading in spatial data 
+library(sf)
+library(ggplot2)
+library(tidyverse)
+library(GISTools)
+library(grid)
+library(OpenStreetMap)
+
+```
+
+# Welcome Team!
+
+This is an R Markdown document that will be used to help DAR analysts enhance their ability to visualize data findings. 
+
+Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown click [here](http://rmarkdown.rstudio.com).
+
+For those who are new to markdown, when you click the **Knit** button at the top of the script, a document will be generated that includes both content as well as the output of any embedded R code chunks within this document. 
+
+## How to Use this Document
+
+This document will serve as the primary data visualization resource manager for the following: 
+
+* Code for basic visualizations
+* Link to datasets 
+* Links to data visualization resources 
+* Ways to further customize charts 
+* Other useful information for working in R Studio
+
+Success with this document entails analysts being able to improve comfort and ease navigating data analysis tools, improve speed in crafting data analysis stories, and further normalize a culture of analytical and technical skill development. 
+
+## What is ggplot2? 
+ggplo2 is the one of the main packages used to create graphics in R. There aim of the package is to build a multitude of different graphics and visualizations utilizing a dataset, a coordinate system, and a visual marks that represent data points, also known as a geom. 
+
+The basic syntax of a ggplot is as follows (Important to note that this may slightly vary depending on the chosen plot):
+
+* ggplot(data = data.frame, aes(x=var1, y=var2))
+* First the data frame of interest is called. From there, aesthetic mappings must be brought in to help data be mapped to a specific visual property.
+
+From here, there are a multitude of options that can be called upon to customize your plot. Instead of listing them all, I will add the link to the ggplot2 cheat sheet [here](https://github.com/rstudio/cheatsheets/blob/master/data-visualization-2.1.pdf) for your exploration.
+
+# Code for Visualizations 
+
+### Bar Charts
+
+First on the list of visualization skills is the use of bar graphs.These are the bread and butter of much of the data visualization that we use in ORAR. 
+
+Best for:
+
+* Comparing across groups
+* tracking changes over time
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r bar_basic, echo=TRUE}
+#Load data
+osse <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Office Days")
+
+#Reorder data
+osse$Days <- factor(osse$Days,levels = c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+
+#Plot data
+basic_bar <- ggplot(osse, aes(x=Count, y=Days, fill = Days)) + #Call your aesthetics
+  geom_bar(stat = "identity")+ 
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(title = "Days in Office", x = "Total Count", y="Days") 
+basic_bar
+```
+
+With this bar that was created, we can easily identify which day of the week most members of DAR are in the office. 
+
+### Bar Plot: Stacked 
+
+Stacked bar charts are another great option for displaying data that utilizes proportions.
+
+Best for:
+
+* Comparing data between groups and between subgroups
+* Depicting large changed of a subgroup
+* Gathering a quick, high level view of content
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r stacked, echo=TRUE}
+#Load data
+residency <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Residency")
+
+#Reorder data
+residency$placeholder <- ""
+
+#Plot data
+stacked <- ggplot(residency, aes(x=placeholder, y=Percentage, fill = Location)) + #Call your aesthetics
+  geom_bar(stat = "identity", position = "stack") +
+   coord_flip() +
+   theme(plot.title = element_text(hjust = 0.5)) +
+   labs(title = "Place of Residency", x = "", y="Location") 
+stacked
+
+```
+
+### Bar Plot: Grouped 
+
+Group bar charts can help tell a more robust story to even your most basic of data.
+
+Best for:
+* Showing changes in categories 
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r grouped, echo=TRUE}
+
+#Load data
+height <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Height") %>% clean_names()
+
+height$level <- factor(height$level,levels = c("Analyst","Manager","Leadership"))
+
+sped <- filter(height, portfolio == "SPED")
+accountability <- filter(height, portfolio == "Accountability")
+postsec <- filter(height, portfolio == "POSTSEC")
+
+#Plot data
+grouped <- ggplot(postsec, aes(x=portfolio, y=height_inches, fill= name)) + #Play around with the fills an x value
+  geom_bar(stat = "identity",position = "dodge", width=0.5, ) +
+  labs(title="ORAR Height",x="Portfolio", y="Height in Inches", fill = "Name")+
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        legend.position = "right") +
+  scale_y_continuous(limits = c(0,84))
+grouped
+
+```
+
+## Bar Plot: Histogram
+
+A histogram is another useful plot. This plot takes numerical data that fall withing a specified range of values. 
+
+Best for:
+* Depicting data from continuous variables 
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r histogram, echo=TRUE}
+#Load data
+height_hist <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Height") %>% clean_names()
+
+#Plot data
+histogram <- ggplot(height_hist, aes(x=height_inches)) + 
+  geom_histogram(binwidth=2.2) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(title = "Height of DAR Staff", x = "", y="Height", fill = "Level") 
+histogram
+```
+
+
+## Bar Plot: Diverging 
+
+Diverging bar charts are another way of to display differences.
+
+Best for:
+* Comparison of multiple categories
+* Quickly displaying comparisons
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r diverging, echo=TRUE}
+#Load data
+sleep <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Sleep") %>% clean_names()
+
+reshaped_sleep <- melt(sleep, id.vars = c("name","level","portfolio")) 
+reshaped_sleep$value <- ifelse(grepl("hours_of_sleep", reshaped_sleep$variable), -1*(reshaped_sleep$value), reshaped_sleep$value)
+
+pretty <- pretty(reshaped_sleep$value) #Creates breaks in the data based on the given range 
+
+#Plot data
+diverging <- ggplot(reshaped_sleep, aes(x=name, y=value, fill=variable)) + 
+  geom_bar(stat = "identity")+
+  theme(plot.title = element_text(hjust = 0.5)) +
+  coord_flip()+
+  labs(title = "Total Sleep", x = "", y="Hours") +
+  scale_y_continuous(breaks = pretty,
+                     labels = abs(pretty)) +
+    scale_fill_manual(name="DAR", labels=c("Hours of Sleep","Hours Awake"), values = c("#4682B4","#B0C4DE")) 
+diverging
+
+
+```
+
+
+## Density Plot
+Density plots help visualize the distribution of data across a set of numeric, continuous, interval or period of time.  
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r density, echo=TRUE}
+#Load data
+height_hist <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Height") %>% clean_names()
+
+#Plot data
+density <- ggplot(height_hist, aes(x=height_inches)) + 
+geom_density(fill= "#4682B433", color = "#4682B433") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  labs(title = "Height of DAR Staff", x = "Inches", y="", fill = "") 
+density
+```
+
+
+### Scatter Plot
+
+Scatter plots area another useful method to look at relationships between a set of variables. 
+
+Best for:
+* Looking for correlation between variables
+* Identifying trends in data
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r scatter, echo=TRUE}
+#Load data
+weather <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Weather") %>% clean_names()
+
+#Plot data
+scatter <- ggplot(weather, aes(x=date, y=temp_hi, group= location, color = location)) + 
+  geom_point() +
+  labs(title = "Weather in DC vs. LA (Aug.11 - Aug.24)", x = "Date", y="Temp (in Fahrenheit)", color = "Location") +
+    theme(plot.title = element_text(hjust = 0.5)) 
+scatter
+
+
+```
+
+### Line Plot 
+
+Line plots are useful ways of showing trends within your data.
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r line, echo=TRUE}
+#Load data
+weather <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Weather") %>% clean_names()
+
+weather_dc <- filter(weather, location == "Washington, DC")
+
+#Plot data
+line <- ggplot(weather_dc, aes(x=date, y=temp_hi, group= location, color = location)) + 
+  geom_point() +
+  geom_line() +
+  labs(title = "Weather in DC Between Aug. 11th and Aug. 24th", x = "Date", y="Temp (in Fahrenheit)", color = "Location") +
+    theme(plot.title = element_text(hjust = 0.5)) 
+line
+
+```
+
+
+### Dumbbell Plot 
+
+Many of the above plots are useful for comparing differences. The dumbbell plot is no different. It is best when you want to visualize differences between two groups/ end points. 
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r dumbell, echo=TRUE}
+
+#Load data
+weather <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Weather") %>% clean_names()
+
+weather_dc <- filter(weather, location == "Washington, DC")
+
+#Dumbbell plot
+dumbbell <- ggplot(weather_dc, aes(x=temp_hi, xend=temp_low, y= date, group= location))+ 
+     geom_dumbbell(aes(x=temp_hi, xend=temp_low),
+                   color="grey", 
+                 size=1.75, 
+                 colour_x = "#4682B4",
+                 colour_xend = "#B4464B",
+                 show.legend = TRUE)+
+  scale_x_continuous()+
+    labs(title = "Weather in DC Between Aug. 11th and Aug. 24th", y = "Date", x="Temp (in Fahrenheit)", color = "Location") +
+      theme(plot.title = element_text(hjust = 0.5))
+dumbbell
+
+```
+
+### Heat Maps 
+Heat maps are also another way to represent data. Instead of plotting a bar or line, heat maps utilize color gradation to specify distribution amongst the data in question. 
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r heat, echo=TRUE}
+#Load data
+calendar <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Calendar Blocks") %>% clean_names()
+
+#Reorder data
+# osse$days <- factor(osse$days,levels = c("Monday","Tuesday","Wednesday","Thursday","Friday"))
+
+#Plot
+heat_plot <- ggplot(calendar, aes(x=day, y=name, fill=count)) +
+          geom_tile() +
+           labs(title = "Calendar Blocks",
+                y = "Name", 
+                x="Day of the Week", 
+                fill = "Count of Blocks") +
+        theme(plot.title = element_text(hjust = 0.5))
+heat_plot
+```
+
+
+### Flextable 
+There are times where it may make more sense to display your data in a table as opposed to a plot. That is where flextable comes in. This package allows the user to customize the format and display of the average table.
+
+Below is the code if you would like to see how you can create your own:
+```{r flex, echo=TRUE}
+#Load data
+in_office <-  readxl::read_excel("C:/Users/reginald.ferrell/Documents/OSSE DAR.xlsx",sheet= "Days by Team")
+
+
+#Create flextable 
+flex <- flextable(in_office, col_keys = c("Name","Level","Monday","Tuesday","Wednesday", "Thursday", 
+                                                "Friday","Portfolio")) 
+
+#Add header lines
+header <- add_header_lines(flex, values = "Days in Office",top = TRUE)
+header <- fontsize(header, size = 10, part = "header")
+
+#Align columns 
+align <- align(header, align = "center", part = "all") ## Part helps choose what part of the table you would like to align (all, header, body, footer)
+
+#Customize border (will be added to data frame/flextable afterward) 
+border <- fp_border(color = "black", width = 1.2)
+
+outer <- border_outer(align, border = border)
+inner <- border_inner(outer, border = border)
+
+#Fill in header with color 
+fill <- bg(inner, bg="#475f77", part = "header")
+fill <- color(fill,color="#ffffff",part="header")
+
+#Bold table 
+bold <- bold(fill,part = "header")
+
+#Final
+final <- bg(bold, bg="#B0C4DE", part = "body", i=1)
+final <- bg(final, bg="#B0C4DE", part = "body", i=3)
+final <- bg(final, bg="#B0C4DE", part = "body", i=5)
+final <- bg(final, bg="#B0C4DE", part = "body", i=7)
+final <- bg(final, bg="#B0C4DE", part = "body", i=9)
+final <- bg(final, bg="#B0C4DE", part = "body", i=11)
+final <- bg(final, bg="#B0C4DE", part = "body", i=13)
+final
+
+final <- width(final, width = 5)
+
+```
+
+### Mapping
+
+R Studio also has the capability to use and visualize spatial data. This can be done in a multitude of ways, but here, we will use ggmap and tmap. Both are good for mapping. This is more of a matter of preference.
+
+Below is the code if you would like to see how you can create your own plot in R:
+```{r map, echo=TRUE}
+#Read in shapefile 
+dc_shp <- readOGR("C:/Users/reginald.ferrell/Documents/Data Visualization Series/Mapping/DC/Basemap_of_DC.shp")
+dc_ward <- readOGR("C:/Users/reginald.ferrell/Documents/Data Visualization Series/Mapping/DC/Ward_from_2012.shp")
+
+#Working with shapefiles
+data(dc_shp)
+dcward_sf <- st_as_sf(dc_ward) #Simple features/ mixed dataset
+
+######## qtm
+# 
+# #Add fills for further customization
+qtm(dcward_sf, fill = "WARD", text="NAME", text.size = .8, format = "World_wide",style = "col_blind",
+              text.root=5, fill.title="Wards of DC", title = "Washington, DC")
+
+
+```
+
+
+# Resources 
+
+## Links to Teams 
+* [Link to Data Visualization Teams location](https://teams.microsoft.com/l/channel/19%3a2d8fadee4ead45048b8a6cd8464d55e1%40thread.skype/Data%2520Visualization%2520Series?groupId=39a5b504-ce8e-440e-bac5-cc121c96e98a&tenantId=8fe449f1-8b94-4fb7-9906-6f939da82d73)
+
+* [ORAR Wiki](https://teams.microsoft.com/l/entity/com.microsoft.teamspace.tab.wiki/tab::9448af1d-2624-4df6-a372-d7ee2158ebf0?context=%7B%22subEntityId%22%3A%22%7B%5C%22pageId%5C%22%3A188%2C%5C%22origin%5C%22%3A2%7D%22%2C%22channelId%22%3A%2219%3Afbbd4b1c7e714034a964af74c2810692%40thread.skype%22%7D&tenantId=8fe449f1-8b94-4fb7-9906-6f939da82d73)
+
+
+# Tips and Tricks 
+R Studio is an awesome tool, but it can be a bit hard to understand at times. The following are a few resources that might help out with the learning curve.
+
+## Swirl
+Swirl is an interactive course that you can do right in your R console. It's at your own pace and will give a pretty great introduction to programming in R. See [here](https://swirlstats.com/).
+
+
+## R Studio Cheatsheets
+* Rmarkdown (https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf)
+* Flex Table (https://ardata-fr.github.io/flextable-book/assets/pdf/cheat_sheet_flextable.pdf)
+* ggplot2 (https://github.com/rstudio/cheatsheets/raw/master/rmarkdown-2.0.pdf)
+* Using Color Palettes (https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/)
+
+## Mapping spatial data in R
+* ggmap (https://journal.r-project.org/archive/2013-1/kahle-wickham.pdf)  
+
+## Stata-Friendly Coding in R
+* From Stata to R (https://dss.princeton.edu/training/RStata.pdf)
+
+## Additional Data Viz Sources
+* From Data to Viz (https://www.data-to-viz.com/)
+
+
