@@ -2,7 +2,7 @@ packages <- c("haven", "ggplot2", "gapminder", "tidyverse", "dplyr", "stringr", 
               "lubridate", "viridis", "haven", "janitor", "wesanderson", "cowplot", "forcats", "ggrepel", 
               "hrbrthemes","sf","tigris", "censusapi","tmap", "tidycensus", "mapview","ggmap",
               "readxl","openxlsx","fuzzyjoin","tidygeocoder","leaflet","reshape2",
-              "tidytuesdayR","treemap","rnaturalearth","wordcloud","sfheaders")
+              "tidytuesdayR","treemap","rnaturalearth","wordcloud","sfheaders","RgoogleMaps")
 # invisible(lapply(packages, install.packages, character.only = TRUE))
 invisible(lapply(packages, library, character.only = TRUE))
 
@@ -90,7 +90,7 @@ tm_shape(g)+
   tm_borders(lwd=2)+
 tm_shape(georgia_sf.sub)+
     tm_fill("lightblue") + tm_borders()+
-  tm_title("Georgia with subset", position = tm_pos_out("center", "top"), size = 1)
+  tm_title("Georgia with Subset", position = tm_pos_out("center", "top"), size = 1)
 
 
 
@@ -216,4 +216,109 @@ tm_shape(blocks_sf) +
     title.size = 2,
     title.position = c("center", "top"),
     legend.hist.size = 0.5)
+
+# Interactive - OpenStreetMap
+georgia.sub <- georgia[index,]
+ul <- as.vector(cbind(bbox(georgia.sub)[2,2], bbox(georgia.sub)[1,1]))
+lr <- as.vector(cbind(bbox(georgia.sub)[2,1], bbox(georgia.sub)[1,2]))
+mymap <- openmap(ul,lr)
+par(mar=c(0,0,0,0))
+plot(mymap, removeMargin=F)
+plot(spTransform(georgia.sub,osm()),add=T,lwd=2)
+
+
+
+#Choropleth mapping with tmap 
+# tmap_mode('plot')
+tm_shape(blocks_sf) +
+    tm_polygons("P_OWNEROCC", title="Owner Occ",
+                palette="-GnBu",
+                breaks=c(0,round(quantileCuts(blocks$P_OWNEROCC,6),1)),legend.hist=T) + #census block of proportion of vacant properties 
+# tm_scale_bar(width = 0.22) + 
+  tm_compass(position = c(0.8,0.07)) +
+  tm_layout(frame=F) 
+
+tm_shape(blocks_sf) +
+  tm_polygons("white")+
+  tm_shape(breach_sf) + 
+  tm_dots(size=0.5, shape=19, col="red",alpha=.5)
+
+
+data(quakes)
+head(quakes)
+coords.tmp <- cbind(quakes$long, quakes$lat)
+quakes.sp <- SpatialPointsDataFrame(coords.tmp, data = data.frame(quakes),
+                                    proj4string = CRS("+proj=longlat"))
+quakes_sf <- st_as_sf(quakes.sp)
+
+tm_shape(quakes_sf)+
+  tm_dots(size = 0.5,alpha=0.3)
+p1 <- tm_shape(quakes_sf)+
+  tm_bubbles("depth",scale=1,shape=19,alpha=0.3,title.size="Quake Depths")
+p2 <- tm_shape(quakes_sf)+
+  tm_dots("depth",shape=19,alpha=0.5,size=0.6,palette="PuBuGn",title="Quake Depths")
+grid.newpage()
+pushViewport(viewport(layout=grid.layout(1,2)))
+  print(p1, vp=viewport(layout.pos.col = 1,height = 5))
+  print(p2, vp=viewport(layout.pos.col = 2,height = 5))
+  
+index <- quakes_sf$mag > 5.5
+summary(index)
+tmp <- quakes_sf[index,]
+tm_shape(tmp) +
+  tm_dots(col=brewer.pal(5,"Reds")[4],shape=19,alpha=0.5,size=1)+
+  tm_layout(title="Quakes > 5.5",title.position = c("center","top"))
+
+lat <- as.vector(quakes$lat)
+long <- as.vector(quakes$long)
+MyMap <- MapBackground(lat=lat,lon=long)
+tmp <- 1+(quakes$mag - min(quakes$mag))/max(quakes$mag)
+PlotOnStaticMap(MyMap,lat,long,cex=tmp,pch=1,col='#FB6A4A30')
+
+MyMap <- MapBackground(lat=lat,lon=long,zoom = 10,maptype="satellite")
+PlotPnStaticMap(MyMap,lat,long,cex=tmp,pch=1,col='#FB6A4A50')
+
+
+### Pulling from https://study.sagepub.com/Brunsdon2e
+library(GISTools)  # for the mapping tools
+library(sf)  # for the mapping tools
+library(rgdal)    # this has the spatial reference tools
+library(tmap)
+library(OpenStreetMap)
+data(newhaven)
+# Define a new projection
+newProj <- CRS("+proj=longlat +ellps=WGS84")
+# Transform blocks and breach
+# 1. using spTransform
+breach2 <- spTransform(breach, newProj)
+blocks2 <- spTransform(blocks, newProj)
+# 2. using st_transform
+breach_sf <- st_as_sf(breach)
+blocks_sf <- st_as_sf(blocks)
+breach_sf <- st_transform(breach_sf, "+proj=longlat +ellps=WGS84")
+blocks_sf <- st_transform(blocks_sf, "+proj=longlat +ellps=WGS84")
+
+# set the mode
+tmap_mode('view')
+# plot the blocks
+tm_shape(blocks_sf) +
+  tm_borders() +
+  # and then plot the breaches
+  tm_shape(breach_sf) +
+  tm_dots(shape = 1, size = 0.1, border.col = NULL, col = "red", alpha = 0.5)
+
+ul <- as.vector(cbind(bbox(blocks2)[2,2], 
+                      bbox(blocks2)[1,1]))
+lr <- as.vector(cbind(bbox(blocks2)[2,1], 
+                      bbox(blocks2)[1,2]))
+# download the map tile
+MyMap <- openmap(ul,lr)
+# now plot the layer and the backdrop
+par(mar = c(0,0,0,0))
+plot(MyMap, removeMargin=FALSE)
+# notice how the data need to be transformed 
+# to the internal osm projection  
+plot(spTransform(blocks2, osm()), add = TRUE, lwd = 1)
+plot(spTransform(breach2, osm()), add = T, pch = 19, col = "#DE2D2650")
+
 
